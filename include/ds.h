@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #define MAXLEN 125
+#define FILEOPT_NUM 6 
 
 typedef struct {
     char CGIRoot[MAXLEN];
@@ -12,5 +13,11 @@ typedef struct {
     int MaxClient;
     int TimeOut;
 } conf_para;
+
+extern char *opt_names[];
+extern char short_names[];
+
+int display_para(conf_para *cfg);
+char match_name(const char *s);
 
 #endif
