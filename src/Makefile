@@ -1,4 +1,4 @@
-OBJ := io.o cmdopt.o main.o
+OBJ := ds.o io.o cmdopt.o fileopt.o main.o
 INCLUDE := $(addprefix ../, $(INCLUDE))
 TARGET := ../$(TARGET)
 CFLAGS += $(patsubst %, -I%, $(INCLUDE))
@@ -12,4 +12,4 @@ $(OBJ):%.o: %.c
 .phony: clean
 
 clean:
-	$(RM) -f $(OBJ)
+	$(RM) $(OBJ)
