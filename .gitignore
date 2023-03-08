@@ -7,4 +7,4 @@ compile_commands.json
 *.o
 
 # bin
-main
+emu-shttpd
