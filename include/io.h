@@ -1,10 +1,10 @@
 #ifndef IO_H
 #define IO_H
 
-#include "ds.h"
+#include <stdio.h>
 
 int copy_string(char *cnf, const char *arg);
 int copy_number(int *cnf, const char *arg);
-int display_para(conf_para *cfg);
+int open_conf(const char *path, FILE **fd);
 
 #endif

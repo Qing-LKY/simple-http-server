@@ -1,4 +1,5 @@
 #include "ds.h"
+#include "io.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,13 +24,8 @@ int copy_number(int *cnf, const char *arg) {
     return 0;
 }
 
-int display_para(conf_para *cfg) {
-    printf("CGIRoot: %s\n", cfg->CGIRoot);
-    printf("DefaultFile: %s\n", cfg->DefaultFile);
-    printf("ConfigFile: %s\n", cfg->ConfigFile);
-    printf("DocumentRoot: %s\n", cfg->DocumentRoot);
-    printf("ListenPort: %d\n", cfg->ListenPort);
-    printf("MaxClient: %d\n", cfg->MaxClient);
-    printf("TimeOut: %d\n", cfg->TimeOut);
+int open_conf(const char *path, FILE **fd) {
+    *fd = fopen(path, "r");
+    if (*fd == NULL) return perror(path), 1;
     return 0;
 }
