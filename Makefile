@@ -12,4 +12,4 @@ all:
 
 clean:
 	$(MAKE) -C src clean
-	$(RM) -f $(TARGET)
+	$(RM) $(TARGET)
