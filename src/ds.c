@@ -14,13 +14,13 @@ char *opt_names[] = {
 char short_names[] = "cdolmt";
 
 int display_para(conf_para *cfg) {
-    printf("CGIRoot: %s\n", cfg->CGIRoot);
-    printf("DefaultFile: %s\n", cfg->DefaultFile);
-    printf("ConfigFile: %s\n", cfg->ConfigFile);
-    printf("DocumentRoot: %s\n", cfg->DocumentRoot);
-    printf("ListenPort: %d\n", cfg->ListenPort);
-    printf("MaxClient: %d\n", cfg->MaxClient);
-    printf("TimeOut: %d\n", cfg->TimeOut);
+    if (*cfg->CGIRoot) printf("CGIRoot: %s\n", cfg->CGIRoot);
+    if (*cfg->DefaultFile) printf("DefaultFile: %s\n", cfg->DefaultFile);
+    if (*cfg->ConfigFile) printf("ConfigFile: %s\n", cfg->ConfigFile);
+    if (*cfg->DocumentRoot) printf("DocumentRoot: %s\n", cfg->DocumentRoot);
+    if (cfg->ListenPort != -1) printf("ListenPort: %d\n", cfg->ListenPort);
+    if (cfg->MaxClient != -1) printf("MaxClient: %d\n", cfg->MaxClient);
+    if (cfg->TimeOut != -1) printf("TimeOut: %d\n", cfg->TimeOut);
     return 0;
 }
 
