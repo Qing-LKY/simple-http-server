@@ -20,7 +20,7 @@ int copy_number(int *cnf, const char *arg) {
     // set 0 to auto choose 10, 8 or 16
     *cnf = strtol(arg, &endptr, 0);
     // something wrong when convert
-    if (*endptr != 0 || errno != 0) return 2;
+    if (errno != 0 || *endptr != 0) return 2;
     return 0;
 }
 
