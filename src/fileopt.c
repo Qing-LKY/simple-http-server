@@ -17,10 +17,7 @@ int line_convert(char *s, char **left, char **right) {
             s[len = i] = 0;
             break;
         }
-        if (s[i] == '=') {
-            if (equv != -1) return /* muti '=' */ 1;
-            equv = i;
-        }
+        if (s[i] == '=' && equv == -1) equv = i;
         if (fir == -1 && !isspace(s[i])) fir = i;
     }
     if (equv == -1 && fir == -1) return /* empty line */ 0;
