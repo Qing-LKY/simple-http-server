@@ -31,3 +31,23 @@ char match_name(const char *s) {
     }
     return '?';
 }
+
+void blank_para(conf_para *cfg) {
+    *cfg->CGIRoot = 0;
+    *cfg->ConfigFile = 0;
+    *cfg->DefaultFile = 0;
+    *cfg->DocumentRoot = 0;
+    cfg->ListenPort = -1;
+    cfg->MaxClient = -1;
+    cfg->TimeOut = -1;
+}
+
+void update_para(conf_para *cfg, conf_para *upd) {
+    if (*upd->CGIRoot) strcpy(cfg->CGIRoot, upd->CGIRoot);
+    if (*upd->ConfigFile) strcpy(cfg->ConfigFile, upd->ConfigFile);
+    if (*upd->DefaultFile) strcpy(cfg->DefaultFile, upd->DefaultFile);
+    if (*upd->DocumentRoot) strcpy(cfg->DocumentRoot, upd->DocumentRoot);
+    if (upd->ListenPort != -1) cfg->ListenPort = upd->ListenPort;
+    if (upd->MaxClient != -1) cfg->MaxClient = upd->MaxClient;
+    if (upd->TimeOut != -1) cfg->TimeOut = upd->TimeOut;
+}

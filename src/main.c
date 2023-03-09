@@ -16,6 +16,7 @@ conf_para def_conf = {
 
 conf_para cmd_conf = { "", "", "", "", -1, -1, -1 };
 conf_para file_conf = { "", "", "", "", -1, -1, -1 };
+conf_para final_conf = { "", "", "", "", -1, -1, -1 };
 
 int parse_cmd(int argc, char *argv[]) {
      conf_para *cfg = &cmd_conf;
@@ -44,8 +45,19 @@ int parse_file() {
      return 0;
 }
 
+int merge_para() {
+     update_para(&final_conf, &def_conf);
+     update_para(&final_conf, &file_conf);
+     update_para(&final_conf, &cmd_conf);
+     puts("Options after merge:");
+     display_para(&final_conf);
+     puts("");
+     return 0;
+}
+
 int main(int argc, char *argv[]) {
      if (parse_cmd(argc, argv)) return 1;
      if (parse_file()) return 1;
+     merge_para();
      return 0;
 }

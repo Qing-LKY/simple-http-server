@@ -19,5 +19,7 @@ extern char short_names[];
 
 int display_para(conf_para *cfg);
 char match_name(const char *s);
+void blank_para(conf_para *cfg);
+void update_para(conf_para *cfg, conf_para *upd);
 
 #endif
