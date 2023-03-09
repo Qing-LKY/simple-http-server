@@ -5,13 +5,13 @@
 #include <stdio.h>
 
 conf_para def_conf = {
-     /* CGIRoot */ "/usr/local/var/www/cgi-bin/",
-     /* DefaultFile */ "index.html",
-     /* DocumentRoot */ "/usr/local/var/www/",
-     /* ConfigFile */ "/etc/emu-shttpd.conf",
-     /* ListenPort */ 8080,
-     /* MaxClient */ 4,
-     /* TimeOut */ 3,
+     .CGIRoot = "/usr/local/var/www/cgi-bin/",
+     .DefaultFile = "index.html",
+     .DocumentRoot = "/usr/local/var/www/",
+     .ConfigFile = "/etc/emu-shttpd.conf",
+     .ListenPort = 8080,
+     .MaxClient = 4,
+     .TimeOut = 3,
 };
 
 conf_para cmd_conf = { "", "", "", "", -1, -1, -1 };
