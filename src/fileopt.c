@@ -126,7 +126,7 @@ int fileopt_parse(const char *path, conf_para *cfg) {
         if (tmp == NULL) break;
         err = line_convert(buf, &le, &ri);
         if (err) {
-            printf("Line %d: Invalid syntax.\n", line_no);
+            printf("Invalid syntax.\n");
             goto bad_config;
         }
         // empty line
@@ -136,5 +136,5 @@ int fileopt_parse(const char *path, conf_para *cfg) {
     }
     return fclose(fd), 0;
 bad_config:
-    return fclose(fd), 1;
+    return fclose(fd), line_no;
 }

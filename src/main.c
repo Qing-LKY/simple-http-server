@@ -36,7 +36,7 @@ int parse_file() {
      char *path = *cmd_conf.ConfigFile ? cmd_conf.ConfigFile : def_conf.ConfigFile;
      int err = fileopt_parse(path, cfg);
      if (err) {
-          puts("Failed in config file parsing.");
+          printf("Failed in config file parsing (line %d).\n", err);
           return 1;
      }
      puts("Options gained in file:");
