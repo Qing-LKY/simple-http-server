@@ -2,6 +2,7 @@
 #include "opt_common.h"
 #include "sig.h"
 #include "sock.h"
+#include "http.h"
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -10,13 +11,33 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <string.h>
 
 pthread_mutex_t thread_init = PTHREAD_MUTEX_INITIALIZER;
 
 worker_ctl *workers;
 
 void do_work(worker_ctl *ctl) {
-    
+    int err, cs = ctl->conn.cli_s;
+    struct pollfd cli_fd = {
+        .fd = cs, .events = POLLIN, 
+        .revents = 0
+    };
+    conn_info *conn = &ctl->conn;
+    while (!ctl->stop) {
+        err = poll(&cli_fd, 1, 500);
+        if (err == 0) continue; // timeout
+        if (err == -1) {
+            perror("poll");
+            continue;
+        }
+        memset(conn->req_buf, 0, sizeof(conn->req_buf));
+        conn->req_len = read(cs, conn->req_buf, sizeof(conn->req_buf));
+        if (conn->req_len > 0) {
+            parse_request(ctl);
+            handle_request(ctl);
+        } else break;
+    }
 }
 
 void *worker_main(void *arg) {
@@ -29,12 +50,13 @@ void *worker_main(void *arg) {
         else {
             ctl->status = STATUS_BUSY;
             do_work(ctl);
-            ctl->status = STATUS_FREE;
+            printf("Thread (i=%d): Disconnect.\n", (int)(ctl - workers));
             close(ctl->conn.cli_s);
             ctl->conn.cli_s = -1;
+            ctl->status = STATUS_FREE;
         }
     }
-    printf("Thread (tid=%d) exiting...\n", (int)ctl->tid);
+    printf("Thread (i=%d) exiting...\n", (int)(ctl - workers));
     ctl->status = STATUS_NONE;
     pthread_exit(NULL);
 }
@@ -105,6 +127,7 @@ void main_loop() {
             perror("Accept");
             continue;
         }
+        printf("Thread (i=%d): Connect with %s\n", free_i, inet_ntoa(cli_addr.sin_addr));
         workers[free_i].status = STATUS_BUSY;
         workers[free_i].conn.cli_s = cs;
         pthread_mutex_unlock(&workers[free_i].mutex);
