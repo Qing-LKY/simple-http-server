@@ -1,16 +1,22 @@
 #include "ds.h"
 #include "opt_common.h"
+#include "sig.h"
+#include "sock.h"
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <poll.h>
 
 pthread_mutex_t thread_init = PTHREAD_MUTEX_INITIALIZER;
 
 worker_ctl *workers;
 
 void do_work(worker_ctl *ctl) {
-
+    
 }
 
 void *worker_main(void *arg) {
@@ -36,7 +42,6 @@ void *worker_main(void *arg) {
 int init_workers() {
     int i, n, err;
     pthread_t tid;
-
     n = final_conf.MaxClient;
     workers = (worker_ctl *)calloc(sizeof(worker_ctl), n);
     for (i = 0; i < n; i++) {
@@ -62,8 +67,48 @@ int init_workers() {
 void destory_workers() {
     int i, n;
     n = final_conf.MaxClient;
-    printf("Waiting for thread stopping...\n");
+    printf(PR_BLUE "Waiting for thread stopping...\n" PR_END);
     for (i = 0; i < n; i++) workers[i].stop = 1;
     sleep(2);
     free(workers);
+}
+
+int find_free_worker() {
+    int i, n;
+    n = final_conf.MaxClient;
+    for (i = 0; i < n; i++) {
+        if (workers[i].status == STATUS_FREE && workers[i].stop == 0)
+            return i;
+    }
+    return -1;
+}
+
+void main_loop() {
+    int err, cs;
+    struct sockaddr_in cli_addr;
+    socklen_t len = sizeof(cli_addr);
+    struct pollfd srv_fd = {
+        .fd = srv_s, .events = POLLIN, 
+        .revents = 0
+    };
+    while (!stop_all) {
+        int free_i = find_free_worker();
+        if (free_i == -1) continue;
+        err = poll(&srv_fd, 1, 500); // 500ms
+        if (err == 0) continue; // 超时
+        if (err == -1) {
+            perror("poll failed"); // 出错
+            continue;
+        }
+        cs = accept(srv_s, (struct sockaddr *)&cli_addr, &len);
+        if (cs < 0) {
+            perror("Accept");
+            continue;
+        }
+        workers[free_i].status = STATUS_BUSY;
+        workers[free_i].conn.cli_s = cs;
+        pthread_mutex_unlock(&workers[free_i].mutex);
+    }
+    destory_workers();
+    close(srv_s);
 }
