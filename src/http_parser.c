@@ -11,6 +11,37 @@ const char methods[][10] = {
     "GET", "POST", "UNKNOWN"
 };
 
+static inline int ishexval(char c) {
+    return isdigit(c) || isalpha(c);
+}
+
+static inline int gethexval(char c) {
+    if (islower(c)) return c - 'a' + 10;
+    if (isupper(c)) return c - 'A' + 10;
+    if (isdigit(c)) return c - '0';
+    return 0;
+}
+
+static inline int gethex(char *p) {
+    return (gethexval(*(p + 1)) << 4) | (gethexval(*(p + 2)));
+}
+
+void url_decode(char *url) {
+    if (url == NULL) return;
+    char *p = url, *q = url;
+    while (*q != 0) {
+        if (*q == '%' && ishexval(*(q + 1)) && ishexval(*(q + 2))) {
+            *p = gethex(q);
+            q += 3;
+            p += 1;
+        } else {
+            *p = *q;
+            ++p; ++q;
+        }
+    }
+    *p = 0;
+}
+
 int get_line(char *s, char *e, char **nex) {
     int n = 0;
     while (s != e && *s != '\n') s++, n++;
@@ -143,8 +174,10 @@ void parse_request(worker_ctl *ctl) {
             break;
         }
     }
+    ctl->conn.req_cont = p != e ? p : NULL;
+    // 解码
+    url_decode(ctl->conn.req_url);
     // 检查 url
     check_url(ctl);
-    ctl->conn.req_cont = p != e ? p : NULL;
     return;
 }
