@@ -1,6 +1,6 @@
 #include "ds.h"
 #include "utils.h"
-#include "cmdopt.h"
+#include "opt_cmd.h"
 #include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>

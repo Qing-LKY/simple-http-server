@@ -1,6 +1,6 @@
 #include "ds.h"
 #include "utils.h"
-#include "fileopt.h"
+#include "opt_file.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

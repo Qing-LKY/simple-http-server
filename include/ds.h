@@ -4,6 +4,8 @@
 #define MAXLEN 125
 #define FILEOPT_NUM 6 
 
+// Module: option parser
+
 typedef struct {
     char CGIRoot[MAXLEN];
     char DefaultFile[MAXLEN];

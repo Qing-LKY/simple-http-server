@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+// Module: option parser
+
 char *opt_names[] = {
     "CGIRoot",
     "DefaultFile",
