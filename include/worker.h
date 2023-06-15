@@ -4,4 +4,6 @@
 int init_workers();
 void destory_workers();
 
+void main_loop();
+
 #endif
