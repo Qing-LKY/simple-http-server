@@ -1,5 +1,5 @@
 #include "ds.h"
-#include "opt_common.h"
+#include "opt.h"
 #include "sig.h"
 #include "sock.h"
 #include "http.h"
@@ -18,6 +18,7 @@ pthread_mutex_t thread_init = PTHREAD_MUTEX_INITIALIZER;
 worker_ctl *workers;
 
 void do_work(worker_ctl *ctl) {
+    printf("Thread (i=%d): Do working.\n", (int)(ctl - workers));
     int err, cs = ctl->conn.cli_s;
     struct pollfd cli_fd = {
         .fd = cs, .events = POLLIN, 
@@ -25,12 +26,13 @@ void do_work(worker_ctl *ctl) {
     };
     conn_info *conn = &ctl->conn;
     while (!ctl->stop) {
-        err = poll(&cli_fd, 1, 500);
-        if (err == 0) continue; // timeout
+        err = poll(&cli_fd, 1, final_conf.TimeOut * 1000);
+        if (err == 0) break; // timeout
         if (err == -1) {
             perror("poll");
             continue;
         }
+        printf("Thread (i=%d): Receving.\n", (int)(ctl - workers));
         memset(conn->req_buf, 0, sizeof(conn->req_buf));
         conn->req_len = read(cs, conn->req_buf, sizeof(conn->req_buf));
         if (conn->req_len > 0) {
@@ -38,6 +40,7 @@ void do_work(worker_ctl *ctl) {
             parse_request(ctl);
             handle_request(ctl);
             if (ctl->conn.req_fd != -1) close(ctl->conn.req_fd);
+            usleep(10000);
         } else break;
     }
 }
@@ -48,7 +51,7 @@ void *worker_main(void *arg) {
     pthread_mutex_unlock(&thread_init); // 通知 init_workers 继续进行
     while (!ctl->stop) {
         err = pthread_mutex_trylock(&ctl->mutex);
-        if (err) sleep(1);
+        if (err) usleep(10000);
         else {
             ctl->status = STATUS_BUSY;
             do_work(ctl);
@@ -93,7 +96,7 @@ void destory_workers() {
     n = final_conf.MaxClient;
     printf(PR_BLUE "Waiting for thread stopping...\n" PR_END);
     for (i = 0; i < n; i++) workers[i].stop = 1;
-    sleep(2);
+    usleep(100000);
     free(workers);
 }
 
@@ -118,7 +121,7 @@ void main_loop() {
     while (!stop_all) {
         int free_i = find_free_worker();
         if (free_i == -1) continue;
-        err = poll(&srv_fd, 1, 500); // 500ms
+        err = poll(&srv_fd, 1, 50); // 50ms
         if (err == 0) continue; // 超时
         if (err == -1) {
             perror("poll failed"); // 出错
@@ -133,6 +136,7 @@ void main_loop() {
         workers[free_i].status = STATUS_BUSY;
         workers[free_i].conn.cli_s = cs;
         pthread_mutex_unlock(&workers[free_i].mutex);
+        usleep(50000);
     }
     destory_workers();
     close(srv_s);
