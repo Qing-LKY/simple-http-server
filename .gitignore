@@ -3,6 +3,8 @@
 .clangd/
 compile_commands.json
 
+tmp_test/
+
 # c object
 *.o
 
