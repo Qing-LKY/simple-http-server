@@ -1,5 +1,7 @@
 #include "opt_common.h"
 #include "sig.h"
+#include "sock.h"
+#include "worker.h"
 
 int main(int argc, char *argv[]) {
     // parse options from file and commandline
@@ -7,6 +9,9 @@ int main(int argc, char *argv[]) {
     // setup sighandler
     if(set_sighandler() != 0) return 1;
     // setup socket and binding ports
-    
+    if (init_socket() != 0) return 1;
+    // init workers
+    if (init_workers() != 0) return 1;
+    main_loop();
     return 0;
 }
