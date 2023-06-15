@@ -10,7 +10,7 @@ all:
 	$(MAKE) -C src
 	$(MAKE) -C demo
 
-.phony: clean install uninstall
+.phony: clean
 
 clean:
 	$(MAKE) -C src clean
