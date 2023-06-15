@@ -1,6 +1,7 @@
 export CC := gcc
 export INCLUDE := include
 export CFLAGS := -g -O2
+export LDFLAGS := -lpthread
 export TARGET := emu-shttpd
 
 export SHELL := /bin/sh
