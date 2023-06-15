@@ -1,10 +1,14 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define MAXLEN 125
-#define FILEOPT_NUM 6 
+#define PR_BLUE "\033[34m"
+#define PR_RED "\033[31m"
+#define PR_END "\033[0m"
 
 // Module: option parser
+
+#define MAXLEN 125
+#define FILEOPT_NUM 6 
 
 typedef struct {
     char CGIRoot[MAXLEN];
