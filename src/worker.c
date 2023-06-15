@@ -34,8 +34,10 @@ void do_work(worker_ctl *ctl) {
         memset(conn->req_buf, 0, sizeof(conn->req_buf));
         conn->req_len = read(cs, conn->req_buf, sizeof(conn->req_buf));
         if (conn->req_len > 0) {
+            ctl->conn.req_fd = -1;
             parse_request(ctl);
             handle_request(ctl);
+            if (ctl->conn.req_fd != -1) close(ctl->conn.req_fd);
         } else break;
     }
 }
