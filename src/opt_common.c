@@ -3,11 +3,12 @@
 #include "opt_cmd.h"
 #include "opt_file.h"
 #include <stdio.h>
+#include <unistd.h>
 
 conf_para def_conf = {
-    .CGIRoot = "/usr/local/var/www/cgi-bin/",
+    .CGIRoot = "./demo/cgi-bin",
     .DefaultFile = "index.html",
-    .DocumentRoot = "/usr/local/var/www/",
+    .DocumentRoot = "./demo",
     .ConfigFile = "/etc/emu-shttpd.conf",
     .ListenPort = 8080,
     .MaxClient = 4,
@@ -60,14 +61,22 @@ int test_para() {
         fprintf(stderr, "Too large MaxClient! It should below 10!\n");
         return 1;
     }
+    if (access(final_conf.DocumentRoot, R_OK) != 0) {
+        perror("Access DocumentRoot");
+        return 2;
+    }
+    if (access(final_conf.CGIRoot, R_OK) != 0) {
+        perror("Access CGIRoot");
+        return 3;
+    }
     return 0;
 }
 
 int parse_opt_all(int argc, char *argv[]) {
     printf(PR_BLUE "Parsing options...\n" PR_END);
     if (parse_cmd(argc, argv)) return 1;
-    if (parse_file()) return 1;
+    if (parse_file()) return 2;
     merge_para();
-    if (test_para()) return 1;
+    if (test_para()) return 3;
     return 0;
 }

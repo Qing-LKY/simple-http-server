@@ -40,7 +40,12 @@ typedef struct _conn_info {
     int cli_s;
     int timeout;
     
+    int req_len, req_err;
     char req_buf[K << 4];
+    int method;
+    char *req_url, *req_cont, *req_get;
+
+    int rsp_len;
     char rsp_buf[K << 4];
 
 } conn_info;
@@ -59,5 +64,17 @@ typedef struct _worker_ctl {
 #define STATUS_NONE 0
 #define STATUS_FREE 1
 #define STATUS_BUSY 2
+
+// Module: http parser
+#define SUPPORT_METHODS 2
+#define HTTP_GET 0
+#define HTTP_POST 1
+#define HTTP_UNKNOWN 2
+
+#define HTTP_BAD_REQUEST 400
+#define HTTP_NOT_FOUND 404
+#define HTTP_OK 200
+#define HTTP_URL_TOO_LARGE 414
+#define HTTP_SERVICE_FAILED 503 
 
 #endif
