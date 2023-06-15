@@ -1,4 +1,4 @@
-#include "opt_common.h"
+#include "opt.h"
 #include "sig.h"
 #include "sock.h"
 #include "worker.h"
