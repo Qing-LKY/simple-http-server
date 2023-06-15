@@ -1,5 +1,5 @@
 #include "ds.h"
-#include "utils.h"
+#include "opt_utils.h"
 #include "opt_cmd.h"
 #include <getopt.h>
 #include <stdlib.h>
