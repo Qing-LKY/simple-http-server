@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 const char TEST_CONTENT[] = "<html><head>Hello World!</head><body><h3>This is the body!</h3></body></html>";
 const char HTTP_STATUS[][20] = {
@@ -72,7 +74,6 @@ void do_get(worker_ctl *ctl) {
     gen_response_hdr(ctl, conn->fd_stat.st_size);
     err = write(conn->cli_s, conn->rsp_buf, conn->rsp_len);
     if (err < 0) perror("write in do_get");
-    lseek(conn->req_fd, 0, SEEK_SET);
     for (;;) {
         n = read(conn->req_fd, conn->rsp_buf, sizeof(conn->rsp_buf));
         if (n > 0) {
@@ -86,7 +87,64 @@ void do_get(worker_ctl *ctl) {
 }
 
 void do_post(worker_ctl *ctl) {
-    
+    int n, err;
+    conn_info *conn = &ctl->conn;
+    if (access(conn->rsp_buf, X_OK) != 0) {
+        goto bad;
+    }
+    if (conn->req_cont == NULL) goto bad;
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        goto bad;
+    }
+    int pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        goto bad;
+    }
+    if (pid == 0) {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        char *p = conn->req_cont;
+        int i = 1, cnt = 1;
+        while (*p != 0) {
+            if (*p == '&') *p = 0, ++cnt;
+            p++;
+        }
+        char **argv = (char **)calloc(sizeof(char *), cnt + 2);
+        argv[0] = conn->rsp_buf;
+        p = conn->req_cont;
+        argv[1] = p;
+        while (i < cnt) {
+            if (*p == 0) argv[++i] = p + 1;
+            p++;
+        }
+        argv[cnt + 1] = NULL;
+        for (i = 1; i <= cnt; i++) url_decode(argv[i]);
+        for (i = 0; i <= cnt; i++) {
+            fprintf(stderr, "%s ", argv[i]);
+        }
+        fprintf(stderr, "\n");
+        execv(argv[0], argv);
+        perror("execv");
+        exit(EXIT_FAILURE);
+    } else {
+        close(pipefd[1]);
+        close(conn->req_fd);
+        conn->req_fd = pipefd[0];
+        wait(NULL);
+        if (fstat(conn->req_fd, &conn->fd_stat) != 0) {
+            perror("fstat");
+        }
+        if (conn->fd_stat.st_size == 0) conn->fd_stat.st_size = 100;
+        do_get(ctl);
+    }
+    return;
+bad:
+    conn->req_err = 503;
+    do_error(ctl);
+    return;
 }
 
 void do_method(worker_ctl *ctl) {
