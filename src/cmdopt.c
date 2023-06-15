@@ -1,5 +1,5 @@
 #include "ds.h"
-#include "io.h"
+#include "utils.h"
 #include "cmdopt.h"
 #include <getopt.h>
 #include <stdlib.h>
