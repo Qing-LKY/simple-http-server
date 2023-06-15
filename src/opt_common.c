@@ -64,6 +64,7 @@ int test_para() {
 }
 
 int parse_opt_all(int argc, char *argv[]) {
+    printf(PR_BLUE "Parsing options...\n" PR_END);
     if (parse_cmd(argc, argv)) return 1;
     if (parse_file()) return 1;
     merge_para();
