@@ -24,4 +24,36 @@ char match_name(const char *s);
 void blank_para(conf_para *cfg);
 void update_para(conf_para *cfg, conf_para *upd);
 
+// Module: multithread worker
+
+#include <pthread.h>
+
+#define K 1024
+
+struct _worker_ctl;
+
+typedef struct _conn_info {
+    int cli_s;
+    int timeout;
+    
+    char req_buf[K << 4];
+    char rsp_buf[K << 4];
+
+} conn_info;
+
+typedef struct _worker_ctl {
+    // worker control info
+    int status, stop;
+    pthread_t tid;
+    pthread_mutex_t mutex;
+
+    // current connection
+    conn_info conn;
+
+} worker_ctl;
+
+#define STATUS_NONE 0
+#define STATUS_FREE 1
+#define STATUS_BUSY 2
+
 #endif
