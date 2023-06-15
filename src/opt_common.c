@@ -1,15 +1,14 @@
 #include "ds.h"
-#include "opt_utils.h"
-#include "opt_cmd.h"
-#include "opt_file.h"
+#include "opt.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 conf_para def_conf = {
     .CGIRoot = "./demo/cgi-bin",
     .DefaultFile = "index.html",
     .DocumentRoot = "./demo",
-    .ConfigFile = "/etc/emu-shttpd.conf",
+    .ConfigFile = "./emu-shttpd.conf",
     .ListenPort = 8080,
     .MaxClient = 4,
     .TimeOut = 3,
@@ -56,6 +55,11 @@ int merge_para() {
     return 0;
 }
 
+void remove_enddot(char *s) {
+    int n = strlen(s);
+    if (s[n - 1] == '/') s[n - 1] = 0;
+}
+
 int test_para() {
     if (final_conf.MaxClient >= 10) {
         fprintf(stderr, "Too large MaxClient! It should below 10!\n");
@@ -65,10 +69,12 @@ int test_para() {
         perror("Access DocumentRoot");
         return 2;
     }
+    remove_enddot(final_conf.DocumentRoot);
     if (access(final_conf.CGIRoot, R_OK) != 0) {
         perror("Access CGIRoot");
         return 3;
     }
+    remove_enddot(final_conf.CGIRoot);
     return 0;
 }
 
