@@ -31,6 +31,8 @@ void update_para(conf_para *cfg, conf_para *upd);
 // Module: multithread worker
 
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define K 1024
 
@@ -44,6 +46,8 @@ typedef struct _conn_info {
     char req_buf[K << 4];
     int method;
     char *req_url, *req_cont, *req_get;
+    int req_fd;
+    struct stat fd_stat;
 
     int rsp_len;
     char rsp_buf[K << 4];
@@ -76,5 +80,6 @@ typedef struct _worker_ctl {
 #define HTTP_OK 200
 #define HTTP_URL_TOO_LARGE 414
 #define HTTP_SERVICE_FAILED 503 
+#define HTTP_FORBIDDEN 403
 
 #endif
