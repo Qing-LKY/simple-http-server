@@ -11,7 +11,7 @@ conf_para def_conf = {
     .ConfigFile = "./emu-shttpd.conf",
     .ListenPort = 8080,
     .MaxClient = 4,
-    .TimeOut = 3,
+    .TimeOut = 1,
 };
 
 conf_para cmd_conf = { "", "", "", "", -1, -1, -1 };
