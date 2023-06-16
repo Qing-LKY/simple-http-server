@@ -3,8 +3,14 @@
 .clangd/
 compile_commands.json
 
+tmp_test/
+
 # c object
 *.o
 
 # bin
 emu-shttpd
+say_something
+
+# tmp
+demo/*.tmp

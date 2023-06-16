@@ -1,14 +1,12 @@
 #include "ds.h"
-#include "utils.h"
-#include "cmdopt.h"
+#include "opt.h"
 #include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 void display_help(const char *arg0) {
     printf("Usage: %s [OPTION]...\n", arg0);
-    puts("Emulate to boot SHTTPD server (with custom options).");
-    puts("Use for testing implementation of configuring.");
+    puts("To start a simple http server (with custom options).");
     puts("");
     puts("Configure:");
     puts("  -c DIRECTORY, --CGIRoot=DIRECTORY");
@@ -22,7 +20,7 @@ void display_help(const char *arg0) {
     puts("Show this message and exit:");
     puts("  -h, --Help");
     puts("");
-    puts("Repository page: <https://github.com/Qing-LKY/SHTTPD-Config-Analyzer>");
+    puts("Repository page: <https://github.com/Qing-LKY/simple-http-server.git>");
     puts("Read README.md for more infomation.");
     exit(EXIT_SUCCESS);
 }
