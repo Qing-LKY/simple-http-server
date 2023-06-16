@@ -33,6 +33,7 @@ const char s400[] = "<html><head><title>Error 400</title></head>\n<body>Failed t
 const char s404[] = "<html><head><title>Error 404</title></head>\n<body>File not found!</body></html>";
 const char s414[] = "<html><head><title>Error 414</title></head>\n<body>Too large url!</body></html>";
 const char s503[] = "<html><head><title>Error 503</title></head>\n<body>Service Failed!</body></html>";
+const char s403[] = "<html><head><title>Error 403</title></head>\n<body>Forbidden path!</body></html>";
 
 void do_error(worker_ctl *ctl) {
     int err, len;
@@ -41,6 +42,7 @@ void do_error(worker_ctl *ctl) {
     printf("Thread (i=%d): Request Error: %d\n", (int)(ctl - workers), conn->req_err);
     switch (conn->req_err) {
         case 400: s = s400; break;
+        case 403: s = s403; break;
         case 404: s = s404; break;
         case 414: s = s414; break;
         case 503: s = s503; break;
