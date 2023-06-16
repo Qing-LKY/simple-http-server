@@ -19,6 +19,7 @@ void gen_response_hdr(worker_ctl *ctl, int len) {
     conn_info *conn = &ctl->conn;
     char *p = conn->rsp_buf;
     memset(p, 0, sizeof(conn->rsp_buf));
+    conn->rsp_len = 0;
     n = sprintf(p, "HTTP/1.1 %d %s\r\n", conn->req_err, err2str(conn->req_err));
     p += n, conn->rsp_len += n;
     n = sprintf(p, "Content-Type: text/html\r\n");
@@ -54,21 +55,28 @@ void do_error(worker_ctl *ctl) {
 }
 
 void do_get(worker_ctl *ctl) {
-    int n, err;
+    int n, err, p;
     conn_info *conn = &ctl->conn;
     gen_response_hdr(ctl, conn->fd_stat.st_size);
     err = write(conn->cli_s, conn->rsp_buf, conn->rsp_len);
-    if (err < 0) perror("write in do_get");
+    printf("rsp_len = %d\n", conn->rsp_len);
+    if (err <= 0) goto bad;
     for (;;) {
         n = read(conn->req_fd, conn->rsp_buf, sizeof(conn->rsp_buf));
+        if (n == 0) break;
         if (n > 0) {
-            err = write(conn->cli_s, conn->rsp_buf, n);
-            if (err < 0) perror("write in do_get");
-        } else if (n < 0) {
-            perror("Read");
-            break;
-        } else break;
+            p = 0;
+            while(n > 0) {
+                err = write(conn->cli_s, conn->rsp_buf + p, n);
+                if (err <= 0) goto bad;
+                p = err; n -= err;
+            }
+        } else if (n < 0) goto bad;
     }
+    return;
+bad:
+    perror("do_get");
+    return;
 }
 
 void do_post(worker_ctl *ctl) {
