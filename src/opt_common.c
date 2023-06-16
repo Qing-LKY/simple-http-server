@@ -5,7 +5,7 @@
 #include <string.h>
 
 conf_para def_conf = {
-    .CGIRoot = "./demo/cgi-bin",
+    .CGIRoot = "./demo",
     .DefaultFile = "index.html",
     .DocumentRoot = "./demo",
     .ConfigFile = "./emu-shttpd.conf",
