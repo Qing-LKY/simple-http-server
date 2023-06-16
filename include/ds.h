@@ -40,14 +40,15 @@ struct _worker_ctl;
 
 typedef struct _conn_info {
     int cli_s;
-    int timeout;
     
     int req_len, req_err;
     char req_buf[K << 4];
     int method;
-    char *req_url, *req_cont, *req_get;
+    char *req_url, *req_get;
     int req_fd;
     struct stat fd_stat;
+    int cont_len;
+    char *req_cont;
 
     int rsp_len;
     char rsp_buf[K << 4];

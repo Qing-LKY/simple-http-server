@@ -1,6 +1,7 @@
 #include "ds.h"
 #include "http.h"
 #include "worker.h"
+#include "http.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,22 +9,6 @@
 #include <sys/wait.h>
 
 const char TEST_CONTENT[] = "<html><head>Hello World!</head><body><h3>This is the body!</h3></body></html>";
-const char HTTP_STATUS[][20] = {
-    "OK", "NOT_FOUND", "UNSUPPORT", "UNKNOWN",
-    "URL_TOO_LARGE", "SERVICE_FAILED"
-};
-
-const char *err2str(int s) {
-    switch (s) {
-        case HTTP_OK: return HTTP_STATUS[0];
-        case HTTP_NOT_FOUND: return HTTP_STATUS[1];
-        case HTTP_BAD_REQUEST: return HTTP_STATUS[2];
-        case HTTP_URL_TOO_LARGE: return HTTP_STATUS[4];
-        case HTTP_SERVICE_FAILED: return HTTP_STATUS[5];
-        default: return HTTP_STATUS[3];
-    }
-    return NULL;
-}
 
 static inline int min(int a, int b) {
     return a > b ? b : a;
@@ -89,10 +74,26 @@ void do_get(worker_ctl *ctl) {
 void do_post(worker_ctl *ctl) {
     int n, err;
     conn_info *conn = &ctl->conn;
+    // 目标文件必须可执行
     if (access(conn->rsp_buf, X_OK) != 0) {
         goto bad;
     }
-    if (conn->req_cont == NULL) goto bad;
+    if (conn->cont_len == 0 || conn->req_cont == NULL) goto bad;
+    // 将 content 提取完整
+    char *new_buf = (char *)calloc(1, conn->cont_len + 3);
+    if (new_buf == NULL) {
+        perror("calloc");
+        goto bad;
+    }
+    n = conn->req_buf + conn->req_len - conn->req_cont;
+    memcpy(new_buf, conn->req_cont, n);
+    if (n < conn->cont_len) {
+        err = read(conn->cli_s, new_buf + n, conn->cont_len - n);
+        if (err < 0) {
+            perror("read in do_post");
+            goto bad2;
+        }
+    }
     int pipefd[2];
     if (pipe(pipefd) == -1) {
         perror("pipe");
@@ -101,46 +102,36 @@ void do_post(worker_ctl *ctl) {
     int pid = fork();
     if (pid == -1) {
         perror("fork");
-        goto bad;
+        goto bad2;
     }
     if (pid == 0) {
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
-        char *p = conn->req_cont;
-        int i = 1, cnt = 1;
-        while (*p != 0) {
-            if (*p == '&') *p = 0, ++cnt;
-            p++;
-        }
-        char **argv = (char **)calloc(sizeof(char *), cnt + 2);
-        argv[0] = conn->rsp_buf;
-        p = conn->req_cont;
-        argv[1] = p;
-        while (i < cnt) {
-            if (*p == 0) argv[++i] = p + 1;
-            p++;
-        }
-        argv[cnt + 1] = NULL;
-        for (i = 1; i <= cnt; i++) url_decode(argv[i]);
+        int cnt, i;
+        char **argv = form2argv(conn->rsp_buf, new_buf, &cnt);
         for (i = 0; i <= cnt; i++) {
             fprintf(stderr, "%s ", argv[i]);
         }
         fprintf(stderr, "\n");
         execv(argv[0], argv);
         perror("execv");
+        free(argv);
         exit(EXIT_FAILURE);
     } else {
-        close(pipefd[1]);
-        close(conn->req_fd);
-        conn->req_fd = pipefd[0];
-        wait(NULL);
-        if (fstat(conn->req_fd, &conn->fd_stat) != 0) {
-            perror("fstat");
+        free(new_buf); // content
+        close(pipefd[1]); // 写端
+        close(conn->req_fd); // 以只读形式打开的文件
+        wait(NULL); // 等待程序执行完
+        conn->req_fd = stream2file((int)(ctl - workers), pipefd[0]); // 读端->临时文件
+        close(pipefd[0]); // 读端
+        if (conn->req_fd == -1 || fstat(conn->req_fd, &conn->fd_stat) != 0) {
+            goto bad;
         }
-        if (conn->fd_stat.st_size == 0) conn->fd_stat.st_size = 100;
         do_get(ctl);
     }
     return;
+bad2:
+    free(new_buf);
 bad:
     conn->req_err = 503;
     do_error(ctl);
@@ -148,6 +139,7 @@ bad:
 }
 
 void do_method(worker_ctl *ctl) {
+    if (ctl->stop) return;
     int n, err;
     conn_info *conn = &ctl->conn;
     switch (conn->method) {
@@ -158,9 +150,11 @@ void do_method(worker_ctl *ctl) {
 }
 
 void handle_request(worker_ctl *ctl) {
+    if (ctl->stop) return;
     printf("Thread (i=%d): Method: %s, url: %s\n", 
         (int)(ctl - workers), methods[ctl->conn.method], ctl->conn.req_url);
-    if (ctl->conn.req_cont) printf("Content: %s\n", ctl->conn.req_cont);
+    if (ctl->conn.req_cont) 
+        printf("Len: %d, Content: %s\n", ctl->conn.cont_len, ctl->conn.req_cont);
     switch (ctl->conn.req_err) {
         case HTTP_OK: do_method(ctl); break;
         default: do_error(ctl); break;
