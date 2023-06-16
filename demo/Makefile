@@ -9,3 +9,4 @@ $(DEMO_BIN):%: %.c
 
 clean:
 	$(RM) $(DEMO_BIN)
+	$(RM) *.tmp
