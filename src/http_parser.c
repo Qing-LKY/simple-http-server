@@ -1,6 +1,7 @@
 #include "ds.h"
 #include "opt.h"
 #include "worker.h"
+#include "http.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -10,37 +11,6 @@
 const char methods[][10] = {
     "GET", "POST", "UNKNOWN"
 };
-
-static inline int ishexval(char c) {
-    return isdigit(c) || isalpha(c);
-}
-
-static inline int gethexval(char c) {
-    if (islower(c)) return c - 'a' + 10;
-    if (isupper(c)) return c - 'A' + 10;
-    if (isdigit(c)) return c - '0';
-    return 0;
-}
-
-static inline int gethex(char *p) {
-    return (gethexval(*(p + 1)) << 4) | (gethexval(*(p + 2)));
-}
-
-void url_decode(char *url) {
-    if (url == NULL) return;
-    char *p = url, *q = url;
-    while (*q != 0) {
-        if (*q == '%' && ishexval(*(q + 1)) && ishexval(*(q + 2))) {
-            *p = gethex(q);
-            q += 3;
-            p += 1;
-        } else {
-            *p = *q;
-            ++p; ++q;
-        }
-    }
-    *p = 0;
-}
 
 int get_line(char *s, char *e, char **nex) {
     int n = 0;
@@ -154,6 +124,26 @@ void check_url(worker_ctl *ctl) {
     try_open_file(ctl);
 }
 
+int getname(char *type) {
+    const char types[][20] = {
+        "Content-Type", "Content-Length"
+    };
+    const int support = 2;
+    for (int i = 0; i < support; i++) if (strcmp(type, types[i]) == 0) return i;
+    return -1;
+}
+
+void parse_hdrline(worker_ctl *ctl, char *p) {
+    char *type = p, *cont;
+    while (*p != 0 && *p != ':') p++;
+    *p = 0; p++; cont = p;
+    switch (getname(type)) {
+        case 0: break;
+        case 1: copy_number(&ctl->conn.cont_len, cont);
+        default: break;
+    }
+}
+
 void parse_request(worker_ctl *ctl) {
     printf("Thread (i=%d): Parsing header.\n", (int)(ctl - workers));
     int err, tn, n; 
@@ -163,16 +153,19 @@ void parse_request(worker_ctl *ctl) {
     e = p + n;
     // 处理第一行: Method url HTTP/x.x
     ctl->conn.req_err = HTTP_OK;
+    ctl->conn.cont_len = 0;
     tn = get_line(p, e, &nexp);
     err = deal_first_line(p, tn, &ctl->conn);
     if (err) return;
-    // 取出请求载荷
+    // 行解析
     for (p = nexp; p != e; p = nexp) {
         tn = get_line(p, e, &nexp);
+        // 空行 意味着后面是 content
         if (tn == 0) {
             p = nexp;
             break;
         }
+        parse_hdrline(ctl, p);
     }
     ctl->conn.req_cont = p != e ? p : NULL;
     // 解码
