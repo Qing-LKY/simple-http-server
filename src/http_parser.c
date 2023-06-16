@@ -136,7 +136,9 @@ int getname(char *type) {
 void parse_hdrline(worker_ctl *ctl, char *p) {
     char *type = p, *cont;
     while (*p != 0 && *p != ':') p++;
-    *p = 0; p++; cont = p;
+    *p = 0; p++; 
+    while (*p != 0 && isspace(*p)) p++;
+    cont = p;
     switch (getname(type)) {
         case 0: break;
         case 1: copy_number(&ctl->conn.cont_len, cont);
