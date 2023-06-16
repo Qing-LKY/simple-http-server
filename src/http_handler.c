@@ -86,7 +86,7 @@ void do_post(worker_ctl *ctl) {
     if (access(conn->rsp_buf, X_OK) != 0) {
         goto bad;
     }
-    if (conn->cont_len == 0 || conn->req_cont == NULL) goto bad;
+    if (conn->cont_len == 0) goto bad;
     if (conn->cont_len > 1000000) goto bad;
     // 将 content 提取完整
     char *new_buf = (char *)calloc(1, conn->cont_len + 3);
