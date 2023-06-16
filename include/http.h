@@ -11,5 +11,6 @@ void url_decode(char *url);
 char **form2argv(char *path, char *form, int *p_cnt);
 const char *err2str(int s);
 int stream2file(int id, int fd);
+int exec2pipe(char **argv);
 
 #endif

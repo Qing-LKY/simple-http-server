@@ -87,6 +87,7 @@ void do_post(worker_ctl *ctl) {
         goto bad;
     }
     if (conn->cont_len == 0 || conn->req_cont == NULL) goto bad;
+    if (conn->cont_len > 1000000) goto bad;
     // 将 content 提取完整
     char *new_buf = (char *)calloc(1, conn->cont_len + 3);
     if (new_buf == NULL) {
@@ -102,42 +103,24 @@ void do_post(worker_ctl *ctl) {
             goto bad2;
         }
     }
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
-        perror("pipe");
-        goto bad;
-    }
-    int pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        goto bad2;
-    }
-    if (pid == 0) {
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        int cnt, i;
-        char **argv = form2argv(conn->rsp_buf, new_buf, &cnt);
-        for (i = 0; i <= cnt; i++) {
-            fprintf(stderr, "%s ", argv[i]);
-        }
-        fprintf(stderr, "\n");
-        execv(argv[0], argv);
-        perror("execv");
-        free(argv);
-        exit(EXIT_FAILURE);
-    } else {
-        free(new_buf); // content
-        close(pipefd[1]); // 写端
-        close(conn->req_fd); // 以只读形式打开的文件
-        wait(NULL); // 等待程序执行完
-        conn->req_fd = stream2file((int)(ctl - workers), pipefd[0]); // 读端->临时文件
-        close(pipefd[0]); // 读端
-        if (conn->req_fd == -1 || fstat(conn->req_fd, &conn->fd_stat) != 0) {
-            goto bad;
-        }
-        do_get(ctl);
-    }
+    // 生成 argv
+    char **argv = form2argv(conn->rsp_buf, new_buf, NULL);
+    // 输出转发到管道
+    int pipefd = exec2pipe(argv);
+    // 原本打开的这个描述符不需要了
+    close(conn->req_fd); 
+    // 管道转存到临时文件
+    conn->req_fd = stream2file((int)(ctl - workers), pipefd);
+    // 释放不需要的资源
+    close(pipefd);
+    free(argv);
+    if (conn->req_fd == -1) goto bad3;
+    if (fstat(conn->req_fd, &conn->fd_stat) != 0) goto bad3;
+    // 响应文件资源
+    do_get(ctl);
     return;
+bad3:
+    free(argv);
 bad2:
     free(new_buf);
 bad:

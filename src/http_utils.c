@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 char **form2argv(char *path, char *form, int *p_cnt) {
     // convert x=xx&y=yy&... to argv[]
@@ -24,7 +25,7 @@ char **form2argv(char *path, char *form, int *p_cnt) {
     }
     argv[cnt + 1] = NULL;
     for (i = 1; i <= cnt; i++) url_decode(argv[i]);
-    *p_cnt = cnt;
+    if (p_cnt != NULL) *p_cnt = cnt;
     return argv;
 }
 
@@ -96,5 +97,39 @@ bad1:
     close(nfd);
 bad2:
     perror("stream2file");
+    return -1;
+}
+
+int exec2pipe(char **argv) {
+    // 返回读端的文件描述符
+    int pipefd[2];
+    // 创建管道
+    if (pipe(pipefd) == -1) goto bad;
+    // 创建子进程
+    int pid = fork();
+    if (pid == -1) goto bad2;
+    if (pid == 0) {
+        // 关闭子进程的读管道
+        close(pipefd[0]);
+        // 绑定标准输出和写管道
+        dup2(pipefd[1], STDOUT_FILENO);
+        // 用于调试
+        int i;
+        for (i = 0; argv[i] != NULL; i++) fprintf(stderr, "%s ", argv[i]);
+        fprintf(stderr, "\n");
+        // 执行程序
+        execv(argv[0], argv);
+        // 失败的处理
+        perror("execv");
+        free(argv);
+        exit(EXIT_FAILURE);
+    }
+    close(pipefd[1]); // 关闭没用的写端
+    return pipefd[0];
+bad2:
+    close(pipefd[0]);
+    close(pipefd[1]);
+bad:
+    perror("exec2pipe");
     return -1;
 }
