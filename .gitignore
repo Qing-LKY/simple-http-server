@@ -11,3 +11,6 @@ tmp_test/
 # bin
 emu-shttpd
 say_something
+
+# tmp
+demo/*.tmp
