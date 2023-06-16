@@ -30,7 +30,7 @@ void do_work(worker_ctl *ctl) {
         if (err == 0) break; // timeout
         if (err == -1) {
             perror("poll");
-            continue;
+            break;
         }
         printf("Thread (i=%d): Receving.\n", (int)(ctl - workers));
         memset(conn->req_buf, 0, sizeof(conn->req_buf));
